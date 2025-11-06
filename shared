@@ -1,0 +1,100 @@
+<script type="module">
+}
+
+
+// ------- CONTROL bootstrap -------
+export function initializeControl(){
+// Elements only on CONTROL page
+const q = (id)=>document.getElementById(id);
+const rundownListUI = q('rundownListUI');
+const bulkTextEditor = q('bulkTextEditor');
+const mediaUpload = q('mediaUpload');
+const mediaFileList = q('mediaFileList');
+const themeSelector = q('themeSelector');
+const slideDurationInput = q('slideDuration');
+const layoutSplit = q('layoutSplit');
+const headerBgUpload = q('headerBgUpload');
+const tickerBgUpload = q('tickerBgUpload');
+const transitionVideoUpload = q('transitionVideoUpload');
+const wipePoint = q('wipePoint');
+const currentSetId = q('currentSetId');
+const goLiveBtn = q('goLive');
+
+
+let activeEditorSet = state.live.set || 0;
+
+
+function renderRundownList(){
+rundownListUI.innerHTML = state.newsSets.map((_,i)=>`<li class="${i===activeEditorSet?'active':''}" data-set-index="${i}"><span>Set ${i+1}</span> <button class="go-live-btn" data-live="${i}">GO LIVE</button></li>`).join('');
+}
+function renderMediaFileList(){ mediaFileList.innerHTML = state.newsSets[activeEditorSet].slides.map((s,i)=>`<p><b>Slide ${i+1}:</b> ${s.mediaName||'No file selected'}</p>`).join(''); }
+function loadSetIntoEditor(i){ activeEditorSet=i; currentSetId.textContent = i+1; const bulk = state.newsSets[i].slides.map(s=>`${s.headerTitle}\n${s.headerSubtitle}\n${s.tickerLine}`).join('\n---\n'); bulkTextEditor.value = bulk; mediaUpload.value=''; renderMediaFileList(); renderRundownList(); }
+
+
+function parseAndSave(){
+const blocks = bulkTextEditor.value.split(/\n---\n/);
+state.newsSets[activeEditorSet].slides.forEach((slide,i)=>{
+const lines = (blocks[i]||'').split('\n');
+slide.headerTitle = lines[0]||''; slide.headerSubtitle=lines[1]||''; slide.tickerLine=lines[2]||'';
+});
+broadcastReplace();
+}
+
+
+async function handleMediaUpload(e){
+const files = Array.from(e.target.files||[]).slice(0,5);
+for (let i=0;i<files.length;i++){
+const data = await fileToDataURL(files[i]);
+const slide = state.newsSets[activeEditorSet].slides[i];
+slide.mediaSrc = data; slide.mediaName = files[i].name;
+}
+renderMediaFileList(); broadcastReplace();
+}
+
+
+function broadcastReplace(){ saveState(state); CHANNEL.postMessage({ type:'STATE_REPLACE', payload: state }); }
+function broadcastPatch(patch){ state = { ...state, ...patch }; saveState(state); CHANNEL.postMessage({ type:'STATE_PATCH', payload: patch }); }
+
+
+// Init controls from state
+themeSelector.value = state.theme; slideDurationInput.value = state.slideDuration; layoutSplit.value = state.layoutSplit; wipePoint.value = state.wipePoint;
+renderRundownList(); loadSetIntoEditor(activeEditorSet);
+
+
+// Listeners
+themeSelector.addEventListener('change', (e)=> broadcastPatch({ theme: e.target.value }));
+slideDurationInput.addEventListener('input', (e)=> broadcastPatch({ slideDuration: Math.max(2, Number(e.target.value)||8) }));
+layoutSplit.addEventListener('input', (e)=> broadcastPatch({ layoutSplit: Number(e.target.value)||30 }));
+bulkTextEditor.addEventListener('input', parseAndSave);
+mediaUpload.addEventListener('change', handleMediaUpload);
+
+
+headerBgUpload.addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const data=await fileToDataURL(f); broadcastPatch({ headerBg:data }); });
+tickerBgUpload.addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const data=await fileToDataURL(f); broadcastPatch({ tickerBg:data }); });
+transitionVideoUpload.addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const data=await fileToDataURL(f); broadcastPatch({ transitionVideo:data }); });
+wipePoint.addEventListener('input', (e)=> broadcastPatch({ wipePoint: Math.max(0, Number(e.target.value)||0.5) }));
+
+
+rundownListUI.addEventListener('click', (e)=>{
+const li = e.target.closest('li'); if(!li) return;
+const setIndex = Number(li.dataset.setIndex);
+if (e.target.matches('button.go-live-btn')){ CHANNEL.postMessage({ type:'GO_LIVE', payload:{ set: setIndex } }); state.live = { set:setIndex, slide:0 }; saveState(state); }
+else { loadSetIntoEditor(setIndex); }
+});
+goLiveBtn.addEventListener('click', ()=>{ CHANNEL.postMessage({ type:'GO_LIVE', payload:{ set: activeEditorSet } }); state.live = { set:activeEditorSet, slide:0 }; saveState(state); });
+}
+
+
+// ------- Minimal particle background (MAIN only) -------
+function initParticles(){
+const canvas = document.getElementById('particle-canvas'); if(!canvas) return; const ctx=canvas.getContext('2d');
+const resize=()=>{ canvas.width=innerWidth; canvas.height=innerHeight; };
+resize(); addEventListener('resize', resize);
+let pA=[]; const init=()=>{ pA=[]; const n=(canvas.height*canvas.width)/9000; for(let i=0;i<n;i++){ let s=Math.random()*2+1,x=Math.random()*innerWidth,y=Math.random()*innerHeight,dX=Math.random()*.4-.2,dY=Math.random()*.4-.2; pA.push({x,y,dX,dY,s}); } };
+const anim=()=>{ requestAnimationFrame(anim); ctx.clearRect(0,0,innerWidth,innerHeight); const color=getComputedStyle(document.documentElement).getPropertyValue('--primary-color')+'40'; for(const p of pA){ if(p.x>canvas.width||p.x<0) p.dX=-p.dX; if(p.y>canvas.height||p.y<0) p.dY=-p.dY; p.x+=p.dX; p.y+=p.dY; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,Math.PI*2); ctx.fillStyle=color; ctx.fill(); } };
+init(); anim();
+}
+
+
+export {};
+</script>
