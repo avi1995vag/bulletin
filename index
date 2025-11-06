@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ultimate Broadcast System v12 — Main</title>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root { --primary-color:#0078D4; --dark-bg-1:#1a2333; --dark-bg-2:#111827; --border-color:#005a9e; --text-color:#ffffff; --logo-text-color:#ffffff; --layout-split:30%; }
+*{margin:0;padding:0;box-sizing:border-box} html,body{height:100%;overflow:hidden} body{font-family:'Anek Kannada',sans-serif;background:var(--dark-bg-2);color:var(--text-color)}
+.news-container{display:grid;grid-template-rows:auto 1fr auto;height:100vh;position:relative}
+#particle-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;background:var(--dark-bg-2)}
+#transitionVideo{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2000;object-fit:cover;display:none;pointer-events:none}
+
+
+.top-header,.bottom-ticker{background:var(--dark-bg-2);padding:15px 40px;z-index:10;position:relative;overflow:hidden}
+.top-header{border-bottom:3px solid var(--primary-color)}
+.bottom-ticker{border-top:3px solid var(--primary-color);display:flex;justify-content:center;align-items:center}
+.header-content{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+.header-left{display:flex;align-items:center;gap:25px;flex-shrink:1;min-width:0}
+.text-reveal-wrapper{overflow:hidden}
+.animate-reveal{transform:translateY(0)!important}
+.news-logo,.news-subtitle,#tickerLine{transform:translateY(110%);transition:transform .5s cubic-bezier(.2,1,.3,1)}
+.news-logo{background:var(--primary-color);padding:5px 20px;font-weight:800;letter-spacing:2px;border-radius:8px;color:var(--logo-text-color);white-space:nowrap}
+.news-subtitle{font-weight:700;text-transform:uppercase;letter-spacing:2px;text-shadow:1px 1px 3px rgba(0,0,0,.5);white-space:nowrap}
+#tickerLine{font-weight:700;letter-spacing:1px;white-space:nowrap}
+.time-display{font-size:16px;font-weight:600;padding:8px 15px;background:rgba(0,0,0,.3);border-radius:8px;flex-shrink:0}
+.bar-background{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.3}
+.bar-background::after{content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:1}
+
+
+.main-content{overflow:hidden;position:relative;display:grid;grid-template-columns:var(--layout-split) 1fr}
+.anchor-placeholder{background:linear-gradient(160deg,var(--dark-bg-1) 0%,var(--dark-bg-2) 100%);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:rgba(255,255,255,.1);border-right:3px solid var(--border-color)}
+.main-media-section{background:#000;position:relative;z-index:5}
+#mediaContainer{position:absolute;top:0;left:0;width:100%;height:100%}
+#mediaContainer img,#mediaContainer video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease-in-out}
+#mediaContainer .visible{opacity:1}
+</style>
+</head>
+<body>
+<div id="particle-canvas"></div>
+<video id="transitionVideo"></video>
+
+
+<div class="news-container">
+<div class="top-header">
+<video class="bar-background" id="headerBgVideo" muted loop autoplay playsinline></video>
+<div class="header-content">
+<div class="header-left">
+<div class="text-reveal-wrapper"><div class="news-logo" id="headerTitle"></div></div>
+<div class="text-reveal-wrapper"><div class="news-subtitle" id="headerSubtitle"></div></div>
+</div>
+<div class="time-display"><span id="currentTime">00:00:00</span></div>
+</div>
+</div>
+
+
+<div class="main-content">
+<div class="anchor-placeholder">[ ANCHOR FEED ]</div>
+<div class="main-media-section"><div id="mediaContainer"></div></div>
+</div>
+
+
+<div class="bottom-ticker">
+<video class="bar-background" id="tickerBgVideo" muted loop autoplay playsinline></video>
+<div class="text-reveal-wrapper" style="position:relative;z-index:2;"><div id="tickerLine"></div></div>
+</div>
+</div>
+
+
+<script type="module" src="./shared.js"></script>
+<script type="module">import { initializeMain } from './shared.js'; initializeMain();</script>
+</body>
+</html>
